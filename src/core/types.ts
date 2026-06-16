@@ -70,3 +70,14 @@ export interface ManifestFetchResult {
  * `URL | RequestInfo` parameter that breaks assignability of test fakes.
  */
 export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
+
+/** Progress emitted while applying a SyncPlan. */
+export interface ProgressEvent {
+  phase: 'download' | 'delete' | 'done';
+  /** Files downloaded so far. */
+  completedFiles: number;
+  /** Total files to download in this plan. */
+  totalFiles: number;
+  /** Instance-relative path currently being processed (omitted for 'done'). */
+  currentPath?: string;
+}
