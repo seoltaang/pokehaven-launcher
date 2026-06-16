@@ -8,10 +8,12 @@ import type { ManifestFetchResult } from './types.js';
  * - 2xx              → parsed manifest + the response ETag
  * - anything else    → throws (caller must treat as transient, NOT as "update available")
  */
+type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
+
 export async function fetchManifest(
   url: string,
   etag: string | null,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: FetchFn = fetch,
 ): Promise<ManifestFetchResult> {
   const headers: Record<string, string> = {};
   if (etag) headers['If-None-Match'] = etag;
