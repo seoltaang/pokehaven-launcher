@@ -71,6 +71,24 @@ describe('computeSyncPlan', () => {
   it('exposes mods/ as the default managed delete root', () => {
     expect(MANAGED_DELETE_ROOTS).toEqual(['mods/']);
   });
+
+  it('sibling-prefix safety: does not delete mods-extra/personal.jar even though it shares the "mods" prefix', () => {
+    const plan = computeSyncPlan(
+      manifest([mf('mods/a.jar', 'h1', true)]),
+      [lf('mods/a.jar', 'h1'), lf('mods-extra/personal.jar', 'hx')],
+    );
+    expect(plan.toDelete).toEqual([]);
+  });
+
+  it('normalization: root without trailing slash still deletes orphan mods/old.jar but not mods-extra/x.jar', () => {
+    const plan = computeSyncPlan(
+      manifest([mf('mods/a.jar', 'h1', true)]),
+      [lf('mods/a.jar', 'h1'), lf('mods/old.jar', 'hold'), lf('mods-extra/x.jar', 'hx')],
+      ['mods'],
+    );
+    expect(plan.toDelete).toEqual(['mods/old.jar']);
+    expect(plan.toDelete).not.toContain('mods-extra/x.jar');
+  });
 });
 
 describe('needsUpdate', () => {

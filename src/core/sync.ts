@@ -23,8 +23,10 @@ export function computeSyncPlan(
     return false; // present and (unforced or matching) → keep
   });
 
+  const roots = managedDeleteRoots.map((r) => (r.endsWith('/') ? r : `${r}/`));
+
   const toDelete = local
-    .filter((l) => managedDeleteRoots.some((root) => l.path.startsWith(root)))
+    .filter((l) => roots.some((root) => l.path.startsWith(root)))
     .filter((l) => !manifestPaths.has(l.path))
     .map((l) => l.path);
 
