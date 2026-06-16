@@ -1,0 +1,42 @@
+/* src/renderer/src/styles/theme.css */
+:root {
+  --bg-0: #0a0e12;      /* near-black base */
+  --bg-1: #11171d;      /* panel base */
+  --bg-2: #18212a;      /* raised panel */
+  --line: #2a3947;      /* thin frame lines */
+  --line-bright: #3d5567;
+  --ink: #e6eef3;       /* primary text */
+  --ink-dim: #8aa0b0;   /* secondary text */
+  --accent: #36e0e0;    /* cyan accent */
+  --accent-2: #2aa7c4;  /* teal */
+  --danger: #ff5c6c;
+  --grid: rgba(54, 224, 224, 0.04);
+  --mono: "Consolas", "SFMono-Regular", "Menlo", monospace;
+  --sans: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app { height: 100%; margin: 0; }
+
+body {
+  background:
+    linear-gradient(0deg, var(--grid) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 100%,
+    radial-gradient(120% 120% at 50% -10%, #14202a 0%, var(--bg-0) 60%);
+  color: var(--ink);
+  font-family: var(--sans);
+  user-select: none;
+  overflow: hidden;
+}
+
+.mono { font-family: var(--mono); }
+.upper { text-transform: uppercase; letter-spacing: 0.12em; }
+
+/* Angular cut-corner via clip-path, reused by panels/buttons. */
+.cut {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--line-bright); }
