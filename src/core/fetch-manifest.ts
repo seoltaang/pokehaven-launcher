@@ -1,6 +1,6 @@
 // src/core/fetch-manifest.ts
 import { parseManifest } from './manifest.js';
-import type { ManifestFetchResult } from './types.js';
+import type { ManifestFetchResult, FetchFn } from './types.js';
 
 /**
  * Fetch and validate the remote manifest with ETag support.
@@ -8,7 +8,6 @@ import type { ManifestFetchResult } from './types.js';
  * - 2xx              → parsed manifest + the response ETag
  * - anything else    → throws (caller must treat as transient, NOT as "update available")
  */
-type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
 export async function fetchManifest(
   url: string,

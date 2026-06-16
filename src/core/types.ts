@@ -63,3 +63,10 @@ export interface ManifestFetchResult {
   /** true when the server replied 304 Not Modified. */
   notModified: boolean;
 }
+
+/**
+ * Narrowed fetch signature for dependency injection. `globalThis.fetch`
+ * satisfies it; using this instead of `typeof fetch` avoids the overloaded
+ * `URL | RequestInfo` parameter that breaks assignability of test fakes.
+ */
+export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
