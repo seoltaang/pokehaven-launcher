@@ -4,6 +4,7 @@
 export type LaunchState =
   | 'logged-out'
   | 'play'
+  | 'install-needed'
   | 'update-available'
   | 'updating'
   | 'launching';

@@ -6,6 +6,9 @@ describe('playButtonState', () => {
   it('shows PLAY enabled when up to date', () => {
     expect(playButtonState('play')).toEqual({ label: 'PLAY', disabled: false, variant: 'primary' });
   });
+  it('shows INSTALL enabled when the game is not installed yet', () => {
+    expect(playButtonState('install-needed')).toEqual({ label: 'INSTALL', disabled: false, variant: 'primary' });
+  });
   it('shows UPDATE enabled when an update is available', () => {
     expect(playButtonState('update-available')).toEqual({ label: 'UPDATE', disabled: false, variant: 'primary' });
   });

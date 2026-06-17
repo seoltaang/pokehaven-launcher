@@ -18,8 +18,9 @@
   let busy = $derived(status.state === 'updating' || status.state === 'launching');
   let bar = $derived(progress ? formatProgress(progress.fraction, progress.currentFile) : null);
   let stateLabel = $derived(
-    status.state === 'update-available' ? '업데이트가 필요합니다'
-    : status.state === 'updating' ? '업데이트 중…'
+    status.state === 'install-needed' ? '설치가 필요합니다'
+    : status.state === 'update-available' ? '업데이트가 필요합니다'
+    : status.state === 'updating' ? '진행 중…'
     : status.state === 'launching' ? '실행 중…'
     : status.state === 'logged-out' ? '로그인이 필요합니다'
     : '플레이 준비 완료',

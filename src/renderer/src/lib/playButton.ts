@@ -11,6 +11,8 @@ export function playButtonState(state: LaunchState): PlayButton {
   switch (state) {
     case 'play':
       return { label: 'PLAY', disabled: false, variant: 'primary' };
+    case 'install-needed':
+      return { label: 'INSTALL', disabled: false, variant: 'primary' };
     case 'update-available':
       return { label: 'UPDATE', disabled: false, variant: 'primary' };
     case 'updating':

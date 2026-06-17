@@ -65,7 +65,7 @@ export async function getStatus(): Promise<LauncherStatus> {
 export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink): Promise<void> {
   const status = await getStatus();
 
-  if (status.state === 'update-available') {
+  if (status.state === 'install-needed' || status.state === 'update-available') {
     onState('updating');
     const manifest = await fetchPackManifest();
 
@@ -76,18 +76,17 @@ export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink)
       const total = plan.toDownload.length || 1;
       await applySyncPlan(instanceDir(), plan, manifest.packVersion, {
         download: (f, dest) => downloadVerified(f, dest, {}),
-        onProgress: (e) => onProgress({ fraction: e.completedFiles / total, currentFile: e.currentPath ?? '' }),
+        onProgress: (e) => onProgress({ fraction: e.completedFiles / total, currentFile: e.currentPath ?? '모드 동기화' }),
       });
     }
 
-    // 2) ensure Java + vanilla + NeoForge installed
-    const phaseFraction: Record<string, number> = { vanilla: 0.3, java: 0.6, neoforge: 0.8, done: 1 };
+    // 2) ensure Java + vanilla + NeoForge installed (streams real download progress)
     const { versionId } = await installGame({
       instanceRoot: instanceDir(),
       minecraft: MINECRAFT_VERSION,
       neoforge: NEOFORGE_VERSION,
       runtimeDir: runtimeDir(),
-      onPhase: (p) => onProgress({ fraction: phaseFraction[p] ?? 0, currentFile: `installing: ${p}` }),
+      onProgress: (fraction, detail) => onProgress({ fraction, currentFile: detail }),
     });
 
     await saveState({ gameVersionId: versionId, packVersion: manifest?.packVersion });
@@ -103,7 +102,7 @@ export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink)
     }
     const state = await loadState();
     if (!state.gameVersionId) {
-      onState('update-available');
+      onState('install-needed');
       return;
     }
     const settings = await loadSettings();

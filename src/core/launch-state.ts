@@ -10,6 +10,7 @@ export interface StateInputs {
 /** Decide the main action-button state. 'updating'/'launching' are set transiently by the service. */
 export function deriveLaunchState(i: StateInputs): LaunchState {
   if (!i.loggedIn) return 'logged-out';
-  if (!i.installed || i.syncNeeded) return 'update-available';
+  if (!i.installed) return 'install-needed';
+  if (i.syncNeeded) return 'update-available';
   return 'play';
 }
