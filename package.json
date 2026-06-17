@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@xmcl/core": "^2.15.1",
-    "@xmcl/installer": "^6.1.2"
+    "@xmcl/installer": "^6.1.2",
+    "msmc": "^5.0.5"
   }
 }
