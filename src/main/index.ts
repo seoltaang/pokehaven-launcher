@@ -3,6 +3,7 @@
 // CommonJS require (not an ESM import), so bridge to it with createRequire.
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { login as authLogin, logout as authLogout, restore as authRestore } from './auth.js';
 
 const require = createRequire(import.meta.url);
 const { app, BrowserWindow, ipcMain } = require('electron') as typeof import('electron');
@@ -34,6 +35,10 @@ function createWindow(): void {
 
 ipcMain.on('window:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize());
 ipcMain.on('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close());
+
+ipcMain.handle('auth:login', () => authLogin());
+ipcMain.handle('auth:logout', () => authLogout());
+ipcMain.handle('auth:restore', () => authRestore());
 
 app.whenReady().then(() => {
   createWindow();

@@ -2,7 +2,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi, Account, Settings } from '../shared/ipc.js';
 
-let account: Account = { username: 'Trainer_Red', uuid: '00000000-0000-0000-0000-000000000001', loggedIn: true };
 let settings: Settings = { ramMB: 6144, directConnect: true, instanceDir: 'C:/Users/you/PokeHavenLauncher/instance' };
 
 const api: LauncherApi = {
@@ -13,17 +12,12 @@ const api: LauncherApi = {
     neoforge: '21.1.233',
     online: true,
   }),
-  getAccount: async () => account,
+  getAccount: async () => (await ipcRenderer.invoke('auth:restore')) ?? { username: '', uuid: '', loggedIn: false },
   getSettings: async () => settings,
-  login: async () => {
-    account = { ...account, loggedIn: true };
-    return account;
-  },
-  logout: async () => {
-    account = { ...account, loggedIn: false };
-  },
+  login: () => ipcRenderer.invoke('auth:login'),
+  logout: () => ipcRenderer.invoke('auth:logout'),
   playOrUpdate: async () => {
-    /* mock: no-op in the skeleton */
+    /* mock: no-op until the launch wiring plan */
   },
   setSettings: async (patch) => {
     settings = { ...settings, ...patch };
