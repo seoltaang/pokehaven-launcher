@@ -43,4 +43,6 @@ export interface LauncherApi {
   logout(): Promise<void>;
   playOrUpdate(): Promise<void>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
+  minimize(): void;
+  close(): void;
 }

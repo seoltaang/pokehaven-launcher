@@ -1,29 +1,49 @@
-/* src/renderer/src/styles/theme.css */
+/* src/renderer/src/styles/theme.css — bright, colorful Pokémon vibe */
 :root {
-  --bg-0: #0a0e12;      /* near-black base */
-  --bg-1: #11171d;      /* panel base */
-  --bg-2: #18212a;      /* raised panel */
-  --line: #2a3947;      /* thin frame lines */
-  --line-bright: #3d5567;
-  --ink: #e6eef3;       /* primary text */
-  --ink-dim: #8aa0b0;   /* secondary text */
-  --accent: #36e0e0;    /* cyan accent */
-  --accent-2: #2aa7c4;  /* teal */
-  --danger: #ff5c6c;
-  --grid: rgba(54, 224, 224, 0.04);
+  /* base surfaces */
+  --bg: #eef3fb;
+  --bg-soft: #e4ecf7;
+  --panel: #ffffff;
+  --panel-2: #f6faff;
+  --ink: #16243a;
+  --ink-dim: #5d7088;
+  --line: #dbe4f0;
+
+  /* brand / Pokémon palette */
+  --red: #ee1515;
+  --red-dark: #c00e0e;
+  --blue: #2a75bb;
+  --blue-dark: #1d4e89;
+  --yellow: #ffcb05;
+  --gold-ink: #8a5a00;
+
+  /* type colors (chips / accents) */
+  --t-grass: #5fbd58;
+  --t-fire: #f5774a;
+  --t-water: #5a93f0;
+  --t-electric: #f6c945;
+  --t-psychic: #f56fa1;
+  --t-dragon: #7a6cf0;
+
+  --shadow-sm: 0 2px 6px rgba(22, 49, 94, 0.08);
+  --shadow: 0 8px 24px rgba(22, 49, 94, 0.12);
+  --shadow-lg: 0 16px 40px rgba(22, 49, 94, 0.18);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+
+  --sans: "Inter", "Pretendard", "Segoe UI", system-ui, sans-serif;
   --mono: "Consolas", "SFMono-Regular", "Menlo", monospace;
-  --sans: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
-
 html, body, #app { height: 100%; margin: 0; }
 
 body {
   background:
-    linear-gradient(0deg, var(--grid) 1px, transparent 1px) 0 0 / 100% 28px,
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 100%,
-    radial-gradient(120% 120% at 50% -10%, #14202a 0%, var(--bg-0) 60%);
+    radial-gradient(1100px 480px at 88% -8%, rgba(42, 117, 187, 0.14), transparent 60%),
+    radial-gradient(900px 420px at -6% 4%, rgba(238, 21, 21, 0.10), transparent 55%),
+    var(--bg);
   color: var(--ink);
   font-family: var(--sans);
   user-select: none;
@@ -31,12 +51,9 @@ body {
 }
 
 .mono { font-family: var(--mono); }
-.upper { text-transform: uppercase; letter-spacing: 0.12em; }
+.upper { text-transform: uppercase; letter-spacing: 0.06em; }
+.dim { color: var(--ink-dim); }
 
-/* Angular cut-corner via clip-path, reused by panels/buttons. */
-.cut {
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-}
-
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: var(--line-bright); }
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #cdd9e9; border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #b6c6dc; }

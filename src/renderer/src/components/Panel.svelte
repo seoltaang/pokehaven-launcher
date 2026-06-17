@@ -1,10 +1,15 @@
 <script lang="ts">
-  interface Props { label?: string; children?: import('svelte').Snippet; }
-  let { label, children }: Props = $props();
+  interface Props { label?: string; accent?: string; children?: import('svelte').Snippet; }
+  let { label, accent = 'var(--blue)', children }: Props = $props();
 </script>
 
-<section class="panel cut">
-  {#if label}<div class="head mono upper">{label}</div>{/if}
+<section class="panel">
+  {#if label}
+    <div class="head">
+      <span class="tick" style="background:{accent}"></span>
+      <span class="upper">{label}</span>
+    </div>
+  {/if}
   <div class="body">
     {@render children?.()}
   </div>
@@ -13,14 +18,19 @@
 <style>
   .panel {
     border: 1px solid var(--line);
-    background: linear-gradient(180deg, var(--bg-1), var(--bg-0));
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
   }
   .head {
-    color: var(--accent);
-    font-size: 11px;
-    padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--ink);
+    font-size: 12px; font-weight: 800;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--line);
-    letter-spacing: 0.18em;
+    background: var(--panel-2);
   }
-  .body { padding: 14px; }
+  .tick { width: 8px; height: 8px; border-radius: 3px; }
+  .body { padding: 16px; }
 </style>

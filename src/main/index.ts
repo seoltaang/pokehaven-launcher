@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
-const { app, BrowserWindow } = require('electron') as typeof import('electron');
+const { app, BrowserWindow, ipcMain } = require('electron') as typeof import('electron');
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -31,6 +31,9 @@ function createWindow(): void {
     void win.loadFile(join(import.meta.dirname, '../renderer/index.html'));
   }
 }
+
+ipcMain.on('window:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize());
+ipcMain.on('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close());
 
 app.whenReady().then(() => {
   createWindow();

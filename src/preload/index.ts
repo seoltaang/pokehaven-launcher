@@ -1,5 +1,5 @@
 // src/preload/index.ts
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi, Account, Settings } from '../shared/ipc.js';
 
 let account: Account = { username: 'Trainer_Red', uuid: '00000000-0000-0000-0000-000000000001', loggedIn: true };
@@ -29,6 +29,8 @@ const api: LauncherApi = {
     settings = { ...settings, ...patch };
     return settings;
   },
+  minimize: () => ipcRenderer.send('window:minimize'),
+  close: () => ipcRenderer.send('window:close'),
 };
 
 contextBridge.exposeInMainWorld('launcher', api);

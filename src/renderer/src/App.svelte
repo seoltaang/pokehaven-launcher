@@ -37,8 +37,14 @@
   <div class="shell">
     {#if account?.loggedIn}
       <nav class="rail">
-        <button class="navbtn mono upper" class:active={screen === 'main'} onclick={() => (screen = 'main')}>홈</button>
-        <button class="navbtn mono upper" class:active={screen === 'settings'} onclick={() => (screen = 'settings')}>설정</button>
+        {#if account}
+          <div class="me">
+            <div class="ava">{account.username.slice(0, 1)}</div>
+            <div class="uname">{account.username}</div>
+          </div>
+        {/if}
+        <button class="navbtn" class:active={screen === 'main'} onclick={() => (screen = 'main')}>🏠 홈</button>
+        <button class="navbtn" class:active={screen === 'settings'} onclick={() => (screen = 'settings')}>⚙️ 설정</button>
       </nav>
     {/if}
 
@@ -52,18 +58,33 @@
       {/if}
     </div>
   </div>
-  <StatusBar text={bootError ? `ERROR: ${bootError}` : status ? formatStatusLine(status) : 'CONNECTING…'} />
+  <StatusBar text={bootError ? `ERROR: ${bootError}` : status ? formatStatusLine(status) : 'CONNECTING…'} online={status?.online ?? false} />
 </div>
 
 <style>
   .app { height: 100%; display: flex; flex-direction: column; }
   .shell { flex: 1; display: flex; min-height: 0; }
-  .rail { width: 92px; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding-top: 10px; }
-  .navbtn {
-    background: transparent; border: none; color: var(--ink-dim);
-    padding: 14px 0; font-size: 11px; letter-spacing: 0.16em; cursor: pointer;
-    border-left: 3px solid transparent;
+  .rail {
+    width: 132px; padding: 14px 10px; gap: 6px;
+    display: flex; flex-direction: column;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
   }
-  .navbtn.active { color: var(--accent); border-left-color: var(--accent); background: rgba(54,224,224,0.05); }
+  .me { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 0 16px; }
+  .ava {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--blue), var(--red));
+    color: #fff; font-weight: 900; font-size: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .uname { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .navbtn {
+    text-align: left; background: transparent; border: none; color: var(--ink-dim);
+    padding: 11px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+    border-radius: var(--radius-sm);
+  }
+  .navbtn:hover { background: var(--bg-soft); color: var(--ink); }
+  .navbtn.active { color: var(--blue); background: rgba(42,117,187,0.10); }
   .content { flex: 1; min-width: 0; overflow: auto; }
 </style>
