@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "check:svelte": "svelte-check --tsconfig tsconfig.web.json",
-    "smoke:launch": "tsx scripts/smoke-launch.ts"
+    "smoke:launch": "tsx scripts/smoke-launch.ts",
+    "build:manifest": "tsx scripts/build-manifest.ts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
