@@ -36,7 +36,17 @@
 
   async function onlogin() { account = await window.launcher.login(); await refresh(); }
   async function onlogout() { await window.launcher.logout(); account = await window.launcher.getAccount(); screen = 'login'; }
-  async function onplay() { await window.launcher.playOrUpdate(); status = await window.launcher.getStatus(); }
+  async function onplay() {
+    try {
+      await window.launcher.playOrUpdate();
+    } catch (e) {
+      bootError = e instanceof Error ? e.message : String(e);
+    } finally {
+      // Always re-derive the real state so the button never stays stuck on busy.
+      status = await window.launcher.getStatus();
+      progress = null;
+    }
+  }
 </script>
 
 <div class="app">
