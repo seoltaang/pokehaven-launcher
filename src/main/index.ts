@@ -4,6 +4,8 @@
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { login as authLogin, logout as authLogout, restore as authRestore } from './auth.js';
+import { getStatus as svcStatus, playOrUpdate as svcPlayOrUpdate } from './launcher-service.js';
+import { loadSettings, saveSettings } from './settings-store.js';
 
 const require = createRequire(import.meta.url);
 const { app, BrowserWindow, ipcMain } = require('electron') as typeof import('electron');
@@ -39,6 +41,17 @@ ipcMain.on('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close
 ipcMain.handle('auth:login', () => authLogin());
 ipcMain.handle('auth:logout', () => authLogout());
 ipcMain.handle('auth:restore', () => authRestore());
+
+ipcMain.handle('launcher:status', () => svcStatus());
+ipcMain.handle('settings:get', () => loadSettings());
+ipcMain.handle('settings:set', (_e, patch) => saveSettings(patch));
+ipcMain.handle('launcher:playOrUpdate', (e) => {
+  const wc = e.sender;
+  return svcPlayOrUpdate(
+    (p) => wc.send('launcher:progress', p),
+    (state) => wc.send('launcher:state', state),
+  );
+});
 
 app.whenReady().then(() => {
   createWindow();

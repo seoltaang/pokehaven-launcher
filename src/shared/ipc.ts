@@ -45,4 +45,8 @@ export interface LauncherApi {
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   minimize(): void;
   close(): void;
+  /** Subscribe to install/update progress. Returns an unsubscribe function. */
+  onProgress(cb: (p: Progress) => void): () => void;
+  /** Subscribe to launch-state changes. Returns an unsubscribe function. */
+  onStateChange(cb: (state: LaunchState) => void): () => void;
 }

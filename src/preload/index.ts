@@ -1,30 +1,26 @@
-// src/preload/index.ts
 import { contextBridge, ipcRenderer } from 'electron';
-import type { LauncherApi, Account, Settings } from '../shared/ipc.js';
-
-let settings: Settings = { ramMB: 6144, directConnect: true, instanceDir: 'C:/Users/you/PokeHavenLauncher/instance' };
+import type { LauncherApi, Progress, LaunchState } from '../shared/ipc.js';
 
 const api: LauncherApi = {
-  getStatus: async () => ({
-    state: 'update-available',
-    packVersion: '2026.06.17',
-    minecraft: '1.21.1',
-    neoforge: '21.1.233',
-    online: true,
-  }),
+  getStatus: () => ipcRenderer.invoke('launcher:status'),
   getAccount: async () => (await ipcRenderer.invoke('auth:restore')) ?? { username: '', uuid: '', loggedIn: false },
-  getSettings: async () => settings,
+  getSettings: () => ipcRenderer.invoke('settings:get'),
   login: () => ipcRenderer.invoke('auth:login'),
   logout: () => ipcRenderer.invoke('auth:logout'),
-  playOrUpdate: async () => {
-    /* mock: no-op until the launch wiring plan */
-  },
-  setSettings: async (patch) => {
-    settings = { ...settings, ...patch };
-    return settings;
-  },
+  playOrUpdate: () => ipcRenderer.invoke('launcher:playOrUpdate'),
+  setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   minimize: () => ipcRenderer.send('window:minimize'),
   close: () => ipcRenderer.send('window:close'),
+  onProgress: (cb: (p: Progress) => void) => {
+    const listener = (_e: unknown, p: Progress) => cb(p);
+    ipcRenderer.on('launcher:progress', listener);
+    return () => ipcRenderer.removeListener('launcher:progress', listener);
+  },
+  onStateChange: (cb: (state: LaunchState) => void) => {
+    const listener = (_e: unknown, s: LaunchState) => cb(s);
+    ipcRenderer.on('launcher:state', listener);
+    return () => ipcRenderer.removeListener('launcher:state', listener);
+  },
 };
 
 contextBridge.exposeInMainWorld('launcher', api);
