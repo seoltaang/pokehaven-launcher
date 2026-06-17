@@ -14,12 +14,19 @@
   let account = $state<Account | null>(null);
   let settings = $state<SettingsT | null>(null);
   let bootError = $state<string | null>(null);
+  let progress = $state<{ fraction: number; currentFile: string } | null>(null);
+
+  window.launcher.onStateChange((s) => {
+    if (status) status = { ...status, state: s };
+    if (s !== 'updating' && s !== 'launching') progress = null;
+  });
+  window.launcher.onProgress((p) => { progress = p; });
 
   async function refresh() {
     try {
-      status = await window.launcher.getStatus();
       account = await window.launcher.getAccount();
       settings = await window.launcher.getSettings();
+      status = await window.launcher.getStatus();
       screen = account.loggedIn ? 'main' : 'login';
     } catch (e) {
       bootError = e instanceof Error ? e.message : String(e);
@@ -27,9 +34,9 @@
   }
   refresh();
 
-  async function onlogin() { account = await window.launcher.login(); screen = 'main'; }
+  async function onlogin() { account = await window.launcher.login(); await refresh(); }
   async function onlogout() { await window.launcher.logout(); account = await window.launcher.getAccount(); screen = 'login'; }
-  async function onplay() { await window.launcher.playOrUpdate(); }
+  async function onplay() { await window.launcher.playOrUpdate(); status = await window.launcher.getStatus(); }
 </script>
 
 <div class="app">
@@ -52,7 +59,7 @@
       {#if screen === 'login'}
         <Login {onlogin} />
       {:else if screen === 'main' && status && account}
-        <Main {status} {account} {onplay} />
+        <Main {status} {account} {progress} {onplay} />
       {:else if screen === 'settings' && settings}
         <Settings {settings} {onlogout} />
       {/if}

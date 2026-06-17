@@ -6,12 +6,17 @@
   import { formatProgress } from '../lib/format.js';
   import type { LauncherStatus, Account } from '../../../shared/ipc.js';
 
-  interface Props { status: LauncherStatus; account: Account; onplay: () => void; }
-  let { status, account, onplay }: Props = $props();
+  interface Props {
+    status: LauncherStatus;
+    account: Account;
+    progress?: { fraction: number; currentFile: string } | null;
+    onplay: () => void;
+  }
+  let { status, account, progress = null, onplay }: Props = $props();
 
   let btn = $derived(playButtonState(status.state));
-  let progress = $derived(formatProgress(0.42, 'Pixelmon-1.21.1-9.3.16-universal.jar'));
   let busy = $derived(status.state === 'updating' || status.state === 'launching');
+  let bar = $derived(progress ? formatProgress(progress.fraction, progress.currentFile) : null);
   let stateLabel = $derived(
     status.state === 'update-available' ? '업데이트가 필요합니다'
     : status.state === 'updating' ? '업데이트 중…'
@@ -49,7 +54,7 @@
     <div class="left">
       <div class="state">{stateLabel}</div>
       <div class="ver">PACK {status.packVersion}</div>
-      {#if busy}<div class="pb"><ProgressBar percent={progress.percent} text={progress.text} /></div>{/if}
+      {#if busy && bar}<div class="pb"><ProgressBar percent={bar.percent} text={bar.text} /></div>{/if}
     </div>
     <Button label={btn.label} variant={btn.variant} disabled={btn.disabled} big onclick={onplay} />
   </div>
