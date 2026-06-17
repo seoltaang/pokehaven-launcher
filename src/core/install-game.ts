@@ -14,6 +14,8 @@ export interface InstallGameOptions {
   neoforge: string;
   /** Where downloaded Java runtimes are stored. */
   runtimeDir: string;
+  /** Max concurrent asset/library downloads (default 8). Lower for flaky/limited networks. */
+  downloadConcurrency?: number;
   onPhase?: (phase: InstallPhase) => void;
 }
 
@@ -30,12 +32,16 @@ export interface InstallGameResult {
  */
 export async function installGame(options: InstallGameOptions): Promise<InstallGameResult> {
   const { instanceRoot, minecraft, neoforge, runtimeDir, onPhase } = options;
+  const concurrency = options.downloadConcurrency ?? 8;
 
   onPhase?.('vanilla');
   const list = await getVersionList();
   const meta = list.versions.find((v) => v.id === minecraft);
   if (!meta) throw new Error(`Minecraft version not found in manifest: ${minecraft}`);
-  const resolved: ResolvedVersion = await install(meta, instanceRoot);
+  const resolved: ResolvedVersion = await install(meta, instanceRoot, {
+    assetsDownloadConcurrency: concurrency,
+    librariesDownloadConcurrency: concurrency,
+  });
 
   onPhase?.('java');
   const javaPath = await ensureJava(
@@ -45,7 +51,10 @@ export async function installGame(options: InstallGameOptions): Promise<InstallG
   );
 
   onPhase?.('neoforge');
-  const versionId = await installNeoForged('neoforge', neoforge, instanceRoot, { java: javaPath });
+  const versionId = await installNeoForged('neoforge', neoforge, instanceRoot, {
+    java: javaPath,
+    librariesDownloadConcurrency: concurrency,
+  });
 
   onPhase?.('done');
   return { versionId, javaPath };

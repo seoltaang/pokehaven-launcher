@@ -17,6 +17,7 @@ async function main() {
     minecraft: '1.21.1',
     neoforge: '21.1.233',
     runtimeDir,
+    downloadConcurrency: 4,
     onPhase: (p) => console.log('[smoke] phase:', p),
   });
   console.log('[smoke] installed versionId:', versionId, 'java:', javaPath);
