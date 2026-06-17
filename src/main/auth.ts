@@ -12,12 +12,20 @@ let current: Minecraft | null = null;
 
 /** Open the Microsoft login window, persist the session, return safe account info. */
 export async function login(): Promise<Account> {
-  const auth = new Auth('select_account');
-  const xbox = await auth.launch('electron', { width: 520, height: 680 });
-  const mc = await xbox.getMinecraft();
-  current = mc;
-  await saveToken(mc.getToken(true));
-  return toAccount({ id: mc.profile?.id ?? '', name: mc.profile?.name ?? '' });
+  try {
+    console.log('[auth] launching Microsoft login window…');
+    const auth = new Auth('select_account');
+    const xbox = await auth.launch('electron', { width: 520, height: 680 });
+    console.log('[auth] xbox token acquired; fetching Minecraft profile…');
+    const mc = await xbox.getMinecraft();
+    current = mc;
+    await saveToken(mc.getToken(true));
+    console.log('[auth] login OK:', mc.profile?.name);
+    return toAccount({ id: mc.profile?.id ?? '', name: mc.profile?.name ?? '' });
+  } catch (e) {
+    console.error('[auth] login failed:', e);
+    throw new Error(typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
+  }
 }
 
 /** Restore a saved session on startup (refreshing it). Returns null if none/invalid. */

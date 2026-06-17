@@ -34,7 +34,14 @@
   }
   refresh();
 
-  async function onlogin() { account = await window.launcher.login(); await refresh(); }
+  async function onlogin() {
+    try {
+      account = await window.launcher.login();
+      await refresh();
+    } catch (e) {
+      bootError = e instanceof Error ? e.message : String(e);
+    }
+  }
   async function onlogout() { await window.launcher.logout(); account = await window.launcher.getAccount(); screen = 'login'; }
   async function onplay() {
     try {
