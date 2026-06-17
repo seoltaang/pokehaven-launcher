@@ -21,6 +21,7 @@ export type StateSink = (state: LauncherStatus['state']) => void;
 
 let etag: string | null = null;
 let cachedManifest: Manifest | null = null;
+let running = false;
 
 async function fetchPackManifest(): Promise<Manifest | null> {
   if (!MANIFEST_URL) return null;
@@ -63,7 +64,21 @@ export async function getStatus(): Promise<LauncherStatus> {
  * record state. When already in sync, launch the game with the signed-in account.
  */
 export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink): Promise<void> {
+  if (running) {
+    console.log('[launcher] playOrUpdate ignored — already running');
+    return;
+  }
+  running = true;
+  try {
+    await runPlayOrUpdate(onProgress, onState);
+  } finally {
+    running = false;
+  }
+}
+
+async function runPlayOrUpdate(onProgress: ProgressSink, onState: StateSink): Promise<void> {
   const status = await getStatus();
+  console.log('[launcher] playOrUpdate start; state =', status.state);
 
   if (status.state === 'install-needed' || status.state === 'update-available') {
     onState('updating');
@@ -81,6 +96,7 @@ export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink)
     }
 
     // 2) ensure Java + vanilla + NeoForge installed (streams real download progress)
+    console.log('[launcher] installing game (java + vanilla + neoforge)…');
     const { versionId } = await installGame({
       instanceRoot: instanceDir(),
       minecraft: MINECRAFT_VERSION,
@@ -88,6 +104,7 @@ export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink)
       runtimeDir: runtimeDir(),
       onProgress: (fraction, detail) => onProgress({ fraction, currentFile: detail }),
     });
+    console.log('[launcher] install complete; versionId =', versionId);
 
     await saveState({ gameVersionId: versionId, packVersion: manifest?.packVersion });
     onState('play');
@@ -107,6 +124,7 @@ export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink)
     }
     const settings = await loadSettings();
     onState('launching');
+    console.log('[launcher] launching minecraft (version', state.gameVersionId, ', ram', settings.ramMB, 'MB)…');
     const proc = await launchGame({
       instanceRoot: instanceDir(),
       versionId: state.gameVersionId,

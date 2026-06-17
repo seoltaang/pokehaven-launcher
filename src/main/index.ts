@@ -47,10 +47,26 @@ ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('settings:set', (_e, patch) => saveSettings(patch));
 ipcMain.handle('launcher:playOrUpdate', (e) => {
   const wc = e.sender;
-  return svcPlayOrUpdate(
-    (p) => wc.send('launcher:progress', p),
-    (state) => wc.send('launcher:state', state),
-  );
+  const send = (channel: string, payload: unknown): void => {
+    if (!wc.isDestroyed()) wc.send(channel, payload);
+  };
+  // Fire-and-forget: a multi-minute install/launch must NOT block the IPC reply.
+  // If we awaited it, a renderer reload mid-install would break the invoke
+  // ("reply was never sent"). Progress/state/error flow back via events instead.
+  void svcPlayOrUpdate(
+    (p) => send('launcher:progress', p),
+    (state) => send('launcher:state', state),
+  )
+    .catch((err: unknown) => {
+      console.error('[launcher] playOrUpdate failed:', err);
+      send('launcher:error', err instanceof Error ? err.message : String(err));
+    })
+    .finally(() => {
+      void svcStatus()
+        .then((s) => send('launcher:state', s.state))
+        .catch(() => {});
+    });
+  // Return immediately so the invoke replies while the renderer is still alive.
 });
 
 app.whenReady().then(() => {

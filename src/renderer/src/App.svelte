@@ -21,6 +21,7 @@
     if (s !== 'updating' && s !== 'launching') progress = null;
   });
   window.launcher.onProgress((p) => { progress = p; });
+  window.launcher.onError((m) => { bootError = m; });
 
   async function refresh() {
     try {
@@ -44,14 +45,13 @@
   }
   async function onlogout() { await window.launcher.logout(); account = await window.launcher.getAccount(); screen = 'login'; }
   async function onplay() {
+    // Returns immediately — the long install/launch runs in main and reports
+    // back via onProgress / onStateChange / onError. Don't await completion here.
+    bootError = null;
     try {
       await window.launcher.playOrUpdate();
     } catch (e) {
       bootError = e instanceof Error ? e.message : String(e);
-    } finally {
-      // Always re-derive the real state so the button never stays stuck on busy.
-      status = await window.launcher.getStatus();
-      progress = null;
     }
   }
 </script>

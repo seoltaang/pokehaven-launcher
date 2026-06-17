@@ -21,6 +21,11 @@ const api: LauncherApi = {
     ipcRenderer.on('launcher:state', listener);
     return () => ipcRenderer.removeListener('launcher:state', listener);
   },
+  onError: (cb: (message: string) => void) => {
+    const listener = (_e: unknown, m: string) => cb(m);
+    ipcRenderer.on('launcher:error', listener);
+    return () => ipcRenderer.removeListener('launcher:error', listener);
+  },
 };
 
 contextBridge.exposeInMainWorld('launcher', api);
