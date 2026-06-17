@@ -12,7 +12,7 @@ function createWindow(): void {
     backgroundColor: '#0a0e12',
     show: false,
     webPreferences: {
-      preload: join(import.meta.dirname, '../preload/index.js'),
+      preload: join(import.meta.dirname, '../preload/index.cjs'),
       sandbox: true,
       contextIsolation: true,
     },

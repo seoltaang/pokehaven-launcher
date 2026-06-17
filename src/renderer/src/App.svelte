@@ -13,12 +13,17 @@
   let status = $state<LauncherStatus | null>(null);
   let account = $state<Account | null>(null);
   let settings = $state<SettingsT | null>(null);
+  let bootError = $state<string | null>(null);
 
   async function refresh() {
-    status = await window.launcher.getStatus();
-    account = await window.launcher.getAccount();
-    settings = await window.launcher.getSettings();
-    screen = account.loggedIn ? 'main' : 'login';
+    try {
+      status = await window.launcher.getStatus();
+      account = await window.launcher.getAccount();
+      settings = await window.launcher.getSettings();
+      screen = account.loggedIn ? 'main' : 'login';
+    } catch (e) {
+      bootError = e instanceof Error ? e.message : String(e);
+    }
   }
   refresh();
 
@@ -47,7 +52,7 @@
       {/if}
     </div>
   </div>
-  <StatusBar text={status ? formatStatusLine(status) : 'CONNECTING…'} />
+  <StatusBar text={bootError ? `ERROR: ${bootError}` : status ? formatStatusLine(status) : 'CONNECTING…'} />
 </div>
 
 <style>

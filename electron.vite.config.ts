@@ -8,6 +8,16 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        output: {
+          // Sandboxed preloads must be CommonJS; emit a .cjs the main process
+          // references explicitly (avoids the .mjs/ESM default under type:module).
+          format: 'cjs',
+          entryFileNames: 'index.cjs',
+        },
+      },
+    },
   },
   renderer: {
     root: resolve('src/renderer'),
