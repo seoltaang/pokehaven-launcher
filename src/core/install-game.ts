@@ -63,7 +63,7 @@ export async function installGame(options: InstallGameOptions): Promise<InstallG
   );
 
   onPhase?.('neoforge');
-  onProgress?.(0.75, 'NeoForge 설치 중');
+  onProgress?.(0.75, 'NeoForge 설치 중 (마지막 처리는 1~2분 걸려요 · 닫지 마세요)');
   const nfTask = installNeoForgedTask('neoforge', neoforge, instanceRoot, {
     java: javaPath,
     librariesDownloadConcurrency: concurrency,
@@ -71,7 +71,10 @@ export async function installGame(options: InstallGameOptions): Promise<InstallG
   const versionId = await nfTask.startAndWait({
     onUpdate: () => {
       if (nfTask.total > 0) {
-        onProgress?.(0.75 + 0.25 * (nfTask.progress / nfTask.total), 'NeoForge 설치 중');
+        onProgress?.(
+          0.75 + 0.25 * (nfTask.progress / nfTask.total),
+          'NeoForge 설치 중 (마지막 처리는 1~2분 걸려요 · 닫지 마세요)',
+        );
       }
     },
   });
