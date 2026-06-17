@@ -1,6 +1,11 @@
 // src/main/index.ts
-import { app, BrowserWindow } from 'electron';
+// Under ESM, Electron's built-in `electron` module is only resolvable via a
+// CommonJS require (not an ESM import), so bridge to it with createRequire.
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
+
+const require = createRequire(import.meta.url);
+const { app, BrowserWindow } = require('electron') as typeof import('electron');
 
 function createWindow(): void {
   const win = new BrowserWindow({
