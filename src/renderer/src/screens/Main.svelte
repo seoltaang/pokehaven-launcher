@@ -4,7 +4,7 @@
   import Pokeball from '../components/Pokeball.svelte';
   import { playButtonState } from '../lib/playButton.js';
   import { formatProgress } from '../lib/format.js';
-  import type { LauncherStatus, Account, ServerStatus } from '../../../shared/ipc.js';
+  import type { LauncherStatus, Account } from '../../../shared/ipc.js';
 
   interface Props {
     status: LauncherStatus;
@@ -13,21 +13,6 @@
     onplay: () => void;
   }
   let { status, account, progress = null, onplay }: Props = $props();
-
-  // Live server status (Minecraft server ping), refreshed periodically.
-  let server = $state<ServerStatus>({ online: false, players: 0, maxPlayers: 220 });
-  async function refreshServer() {
-    try {
-      server = await window.launcher.getServerStatus();
-    } catch {
-      server = { online: false, players: 0, maxPlayers: server.maxPlayers };
-    }
-  }
-  $effect(() => {
-    refreshServer();
-    const id = setInterval(refreshServer, 30_000);
-    return () => clearInterval(id);
-  });
 
   let btn = $derived(playButtonState(status.state));
   let busy = $derived(status.state === 'updating' || status.state === 'launching');
@@ -54,13 +39,6 @@
   <div class="ident">
     <h1>PokeHaven <span class="hl">Frontier</span></h1>
     <p>Pixelmon · NeoForge 1.21.1</p>
-  </div>
-
-  <!-- server info (glass) — live via Minecraft server ping -->
-  <div class="srv">
-    <div class="srv-top"><span class="live" class:off={!server.online}></span>{server.online ? 'SERVER ONLINE' : 'SERVER OFFLINE'}</div>
-    <div class="srv-big">{server.players}<span>/{server.maxPlayers}</span></div>
-    <div class="srv-sub">{server.online ? '트레이너 접속 중' : '서버에 연결할 수 없음'}</div>
   </div>
 
   <!-- bottom action bar -->
@@ -93,22 +71,6 @@
   .ident h1 { margin: 0; font-size: 38px; font-weight: 900; text-shadow: 0 2px 12px rgba(0,0,0,0.25); }
   .ident .hl { color: var(--yellow); }
   .ident p { margin: 6px 0 0; opacity: 0.9; font-weight: 600; }
-
-  .srv {
-    position: absolute; top: 34px; right: 36px;
-    background: rgba(255,255,255,0.14);
-    border: 1px solid rgba(255,255,255,0.25);
-    backdrop-filter: blur(8px);
-    border-radius: 16px;
-    padding: 16px 20px;
-    min-width: 180px;
-  }
-  .srv-top { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; opacity: 0.95; }
-  .live { width: 8px; height: 8px; border-radius: 50%; background: #66e08a; box-shadow: 0 0 0 4px rgba(102,224,138,0.3); }
-  .live.off { background: #d9534f; box-shadow: 0 0 0 4px rgba(217,83,79,0.25); }
-  .srv-big { font-size: 34px; font-weight: 900; margin-top: 6px; }
-  .srv-big span { font-size: 16px; opacity: 0.8; font-weight: 700; }
-  .srv-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
 
   .actionbar {
     position: absolute; left: 0; right: 0; bottom: 0;

@@ -6,7 +6,6 @@ import { join } from 'node:path';
 import { login as authLogin, logout as authLogout, restore as authRestore } from './auth.js';
 import { getStatus as svcStatus, playOrUpdate as svcPlayOrUpdate } from './launcher-service.js';
 import { loadSettings, saveSettings } from './settings-store.js';
-import { getServerStatus as svcServerStatus } from './server-status.js';
 import { instanceDir } from './config.js';
 
 const require = createRequire(import.meta.url);
@@ -47,7 +46,6 @@ ipcMain.handle('auth:restore', () => authRestore());
 ipcMain.handle('launcher:status', () => svcStatus());
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('settings:set', (_e, patch) => saveSettings(patch));
-ipcMain.handle('server:status', () => svcServerStatus());
 ipcMain.on('instance:open', () => void shell.openPath(instanceDir()));
 ipcMain.handle('launcher:playOrUpdate', (e) => {
   const wc = e.sender;

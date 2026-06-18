@@ -10,7 +10,6 @@ const api: LauncherApi = {
   playOrUpdate: () => ipcRenderer.invoke('launcher:playOrUpdate'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   openInstanceDir: () => ipcRenderer.send('instance:open'),
-  getServerStatus: () => ipcRenderer.invoke('server:status'),
   minimize: () => ipcRenderer.send('window:minimize'),
   close: () => ipcRenderer.send('window:close'),
   onProgress: (cb: (p: Progress) => void) => {

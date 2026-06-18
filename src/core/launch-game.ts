@@ -34,6 +34,8 @@ export function buildLaunchOption(p: LaunchParams): LaunchOption {
     gameProfile: { name: p.account.name, id: p.account.uuid },
     accessToken: p.account.accessToken,
     userType: 'mojang',
+    // Hide the java console window on Windows.
+    extraExecOption: { windowsHide: true },
   };
   if (p.server) {
     option.quickPlayMultiplayer = `${p.server.ip}:${p.server.port ?? 25565}`;

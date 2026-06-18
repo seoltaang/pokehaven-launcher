@@ -1,5 +1,5 @@
 // src/main/launcher-service.ts
-import { fork } from 'node:child_process';
+import { fork, type ForkOptions } from 'node:child_process';
 import { join } from 'node:path';
 import type { LauncherStatus, Progress } from '../shared/ipc.js';
 import { fetchManifest } from '../core/fetch-manifest.js';
@@ -33,8 +33,11 @@ function forkWorker(): ReturnType<typeof fork> {
   const nodeExec = process.env['npm_node_execpath'] || 'node';
   return fork(workerPath, [], {
     execPath: nodeExec,
-    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-  });
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    // windowsHide is forwarded to spawn() to suppress the console window on
+    // Windows; it isn't in ForkOptions' type, so widen via the cast.
+    windowsHide: true,
+  } as ForkOptions);
 }
 
 function installViaWorker(onProgress: ProgressSink): Promise<InstallGameResult> {

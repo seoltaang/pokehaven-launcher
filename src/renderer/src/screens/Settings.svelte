@@ -25,7 +25,7 @@
   <Panel label="게임 설정" accent="var(--blue)">
     <div class="row">
       <div class="meta"><div class="k">RAM 할당</div><div class="d dim">마인크래프트에 할당할 메모리</div></div>
-      <input id="ram" type="range" min="2048" max="16384" step="512" bind:value={ram} oninput={onRam} />
+      <input id="ram" type="range" min="2048" max="65536" step="1024" bind:value={ram} oninput={onRam} />
       <span class="val">{(ram / 1024).toFixed(1)} GB</span>
     </div>
     <div class="row">

@@ -23,7 +23,7 @@
     align-items: center;
     gap: 10px;
     padding: 0 8px 0 14px;
-    background: linear-gradient(180deg, #ffffff, #f1f6fd);
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
     border-bottom: 1px solid var(--line);
     -webkit-app-region: drag;
   }

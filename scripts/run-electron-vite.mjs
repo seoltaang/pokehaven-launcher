@@ -15,5 +15,6 @@ const child = spawn('electron-vite', [sub], {
   stdio: 'inherit',
   shell: true,
   env: process.env,
+  windowsHide: true,
 });
 child.on('exit', (code) => process.exit(code ?? 0));

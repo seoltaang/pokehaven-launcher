@@ -24,8 +24,5 @@ export const NEOFORGE_VERSION = '21.1.233';
  */
 export const MANIFEST_URL = '';
 
-/** PokeHaven Frontier server for direct-connect + live status. */
+/** PokeHaven Frontier server for direct-connect. */
 export const SERVER = { ip: 'ysknd.kro.kr', port: 25565 };
-
-/** Fallback max-player count shown when the server can't be reached. */
-export const SERVER_MAX_PLAYERS = 20;
