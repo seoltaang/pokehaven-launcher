@@ -7,7 +7,8 @@ export type LaunchState =
   | 'install-needed'
   | 'update-available'
   | 'updating'
-  | 'launching';
+  | 'launching'
+  | 'playing';
 
 export interface LauncherStatus {
   state: LaunchState;

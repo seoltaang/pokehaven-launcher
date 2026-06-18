@@ -125,6 +125,8 @@ function launchViaWorker(
 let etag: string | null = null;
 let cachedManifest: Manifest | null = null;
 let running = false;
+/** True while a launched game process is alive — blocks a second launch. */
+let gameRunning = false;
 
 async function fetchPackManifest(): Promise<Manifest | null> {
   if (!MANIFEST_URL) return null;
@@ -161,7 +163,8 @@ export async function getStatus(): Promise<LauncherStatus> {
   const installed = gameActuallyInstalled(state0.gameVersionId);
   const syncNeeded = await computeSyncNeeded(manifest);
   return {
-    state: deriveLaunchState({ loggedIn: account.loggedIn, installed, syncNeeded }),
+    // While the game is running, keep the button locked regardless of disk state.
+    state: gameRunning ? 'playing' : deriveLaunchState({ loggedIn: account.loggedIn, installed, syncNeeded }),
     packVersion: manifest?.packVersion ?? state0.packVersion ?? '—',
     minecraft: MINECRAFT_VERSION,
     neoforge: NEOFORGE_VERSION,
@@ -174,8 +177,8 @@ export async function getStatus(): Promise<LauncherStatus> {
  * record state. When already in sync, launch the game with the signed-in account.
  */
 export async function playOrUpdate(onProgress: ProgressSink, onState: StateSink): Promise<void> {
-  if (running) {
-    console.log('[launcher] playOrUpdate ignored — already running');
+  if (running || gameRunning) {
+    console.log('[launcher] playOrUpdate ignored — already running/playing');
     return;
   }
   running = true;
@@ -230,15 +233,29 @@ async function runPlayOrUpdate(onProgress: ProgressSink, onState: StateSink): Pr
     const settings = await loadSettings();
     onState('launching');
     console.log('[launcher] launching minecraft via worker (version', state.gameVersionId, ', ram', settings.ramMB, 'MB)…');
-    // Launch in the worker (off Electron's Node); resolves once the game spawns.
-    await launchViaWorker(
-      {
-        versionId: state.gameVersionId,
-        maxMemoryMB: settings.ramMB,
-        account,
-        server: settings.directConnect ? SERVER : undefined,
-      },
-      onState,
-    );
+    // Mark the game as running for the whole session so a second launch is
+    // refused; clear it (and return the button to PLAY) when the game exits.
+    gameRunning = true;
+    let exited = false;
+    try {
+      // Launch in the worker (off Electron's Node); resolves once the game spawns.
+      await launchViaWorker(
+        {
+          versionId: state.gameVersionId,
+          maxMemoryMB: settings.ramMB,
+          account,
+          server: settings.directConnect ? SERVER : undefined,
+        },
+        (s) => {
+          exited = true;
+          gameRunning = false;
+          onState(s);
+        },
+      );
+    } catch (e) {
+      gameRunning = false;
+      throw e;
+    }
+    if (!exited) onState('playing');
   }
 }

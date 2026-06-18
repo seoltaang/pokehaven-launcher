@@ -19,6 +19,8 @@ export function playButtonState(state: LaunchState): PlayButton {
       return { label: 'UPDATING', disabled: true, variant: 'busy' };
     case 'launching':
       return { label: 'LAUNCHING', disabled: true, variant: 'busy' };
+    case 'playing':
+      return { label: 'PLAYING', disabled: true, variant: 'busy' };
     case 'logged-out':
       return { label: 'PLAY', disabled: true, variant: 'primary' };
   }

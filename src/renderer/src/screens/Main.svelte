@@ -22,6 +22,7 @@
     : status.state === 'update-available' ? '업데이트가 필요합니다'
     : status.state === 'updating' ? '진행 중…'
     : status.state === 'launching' ? '실행 중…'
+    : status.state === 'playing' ? '게임 플레이 중'
     : status.state === 'logged-out' ? '로그인이 필요합니다'
     : '플레이 준비 완료',
   );
