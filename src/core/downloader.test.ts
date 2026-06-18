@@ -31,6 +31,19 @@ describe('downloadVerified', () => {
     expect(existsSync(dest + '.part')).toBe(false);
   });
 
+  it('writes a zero-byte file without crashing', async () => {
+    const data = Buffer.alloc(0);
+    const file = mfFor(data, 'config/empty.txt');
+    const fetchImpl: FetchFn = async () => new Response(new Uint8Array(0), { status: 200 });
+    const dest = join(dir, 'config/empty.txt');
+
+    await downloadVerified(file, dest, { fetchImpl });
+
+    expect(existsSync(dest)).toBe(true);
+    expect(readFileSync(dest).length).toBe(0);
+    expect(existsSync(dest + '.part')).toBe(false);
+  });
+
   it('throws and removes .part on SHA-1 mismatch', async () => {
     const file = mfFor(Buffer.from('correct'));
     const wrong = Buffer.from('TAMPERED');

@@ -30,22 +30,28 @@ export async function downloadVerified(
 
   // How many verified-prefix bytes do we already have?
   let existing = 0;
+  let partExists = false;
   try {
     existing = (await stat(partPath)).size;
+    partExists = true;
   } catch {
     existing = 0;
+    partExists = false;
   }
   if (existing > file.size) {
     await rm(partPath, { force: true });
     existing = 0;
+    partExists = false;
   }
 
-  if (existing < file.size) {
+  // Download unless the .part already holds the complete file. The `!partExists`
+  // check matters for zero-byte files (existing === size === 0): we still need to
+  // create the (empty) .part so the verify+rename below has a file to act on.
+  if (!partExists || existing < file.size) {
     const headers: Record<string, string> = {};
     if (existing > 0) headers['Range'] = `bytes=${existing}-`;
     const res = await fetchImpl(file.url, { headers });
     if (!res.ok) throw new Error(`download failed: ${file.url} -> ${res.status}`);
-    if (!res.body) throw new Error(`download has no body: ${file.url}`);
 
     // If we asked for a range but the server replied 200, it sent the whole
     // file: start over from byte 0.
@@ -55,10 +61,14 @@ export async function downloadVerified(
     const fh = await open(partPath, append ? 'a' : 'w');
     let downloaded = startByte;
     try {
-      for await (const chunk of res.body as AsyncIterable<Uint8Array>) {
-        await fh.write(chunk);
-        downloaded += chunk.length;
-        options.onProgress?.(downloaded, file.size);
+      // res.body can be null for an empty (0-byte) response; the open above
+      // already created the .part, which is all a 0-byte file needs.
+      if (res.body) {
+        for await (const chunk of res.body as AsyncIterable<Uint8Array>) {
+          await fh.write(chunk);
+          downloaded += chunk.length;
+          options.onProgress?.(downloaded, file.size);
+        }
       }
     } finally {
       await fh.close();
