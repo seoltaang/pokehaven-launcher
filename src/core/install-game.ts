@@ -1,5 +1,6 @@
 // src/core/install-game.ts
 import net from 'node:net';
+import { Agent, RetryAgent, type Dispatcher } from 'undici';
 import { getVersionList, installTask, installNeoForgedTask } from '@xmcl/installer';
 import type { ResolvedVersion } from '@xmcl/core';
 import { ensureJava } from './java.js';
@@ -7,6 +8,22 @@ import { ensureJava } from './java.js';
 // Disable Happy Eyeballs (autoSelectFamily). undici's connection setup can hang
 // under Electron's Node when this is on, which stalled the NeoForge install.
 net.setDefaultAutoSelectFamily?.(false);
+
+// Connections to Mojang's asset CDN / maven are flaky from some networks
+// (UND_ERR_CONNECT_TIMEOUT). Use a long connect timeout and retry transient
+// failures so the bulk asset/library download completes instead of aborting.
+const robustDispatcher: Dispatcher = new RetryAgent(
+  new Agent({ connect: { timeout: 60_000 }, connections: 32, headersTimeout: 60_000, bodyTimeout: 300_000 }),
+  {
+    maxRetries: 8,
+    minTimeout: 500,
+    maxTimeout: 10_000,
+    errorCodes: [
+      'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT', 'UND_ERR_SOCKET',
+      'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ENETDOWN', 'ENETUNREACH', 'EHOSTDOWN', 'EHOSTUNREACH', 'EPIPE', 'ETIMEDOUT',
+    ],
+  },
+);
 
 export type InstallPhase = 'vanilla' | 'java' | 'neoforge' | 'done';
 
@@ -44,7 +61,8 @@ export interface InstallGameResult {
  */
 export async function installGame(options: InstallGameOptions): Promise<InstallGameResult> {
   const { instanceRoot, minecraft, neoforge, runtimeDir, onPhase, onProgress } = options;
-  const concurrency = options.downloadConcurrency ?? 8;
+  // Modest concurrency + retry dispatcher = far fewer connect timeouts on flaky links.
+  const concurrency = options.downloadConcurrency ?? 4;
 
   // Progress is split across phases: vanilla 0..0.6, java 0.6..0.75, neoforge 0.75..1.
   onPhase?.('vanilla');
@@ -55,6 +73,7 @@ export async function installGame(options: InstallGameOptions): Promise<InstallG
   const vanillaTask = installTask(meta, instanceRoot, {
     assetsDownloadConcurrency: concurrency,
     librariesDownloadConcurrency: concurrency,
+    dispatcher: robustDispatcher,
   });
   const resolved: ResolvedVersion = await vanillaTask.startAndWait({
     onUpdate: () => {
@@ -77,6 +96,7 @@ export async function installGame(options: InstallGameOptions): Promise<InstallG
   const nfTask = installNeoForgedTask('neoforge', neoforge, instanceRoot, {
     java: javaPath,
     librariesDownloadConcurrency: concurrency,
+    dispatcher: robustDispatcher,
   });
   const versionId = await nfTask.startAndWait({
     onUpdate: () => {
