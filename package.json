@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "main": "./out/main/index.js",
+  "description": "PokeHaven Frontier modpack launcher",
+  "author": "PokeHaven",
   "scripts": {
     "dev": "node scripts/run-electron-vite.mjs dev",
     "build": "electron-vite build",
@@ -13,13 +15,19 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "check:svelte": "svelte-check --tsconfig tsconfig.web.json",
     "smoke:launch": "tsx scripts/smoke-launch.ts",
-    "build:manifest": "tsx scripts/build-manifest.ts"
+    "build:manifest": "tsx scripts/build-manifest.ts",
+    "dist": "npm run build && node scripts/fetch-node.mjs && electron-builder",
+    "dist:win": "npm run build && node scripts/fetch-node.mjs && electron-builder --win",
+    "dist:mac": "npm run build && node scripts/fetch-node.mjs && electron-builder --mac"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
     "@types/node": "^22.10.2",
     "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "png2icons": "^2.0.1",
     "svelte": "^5.56.3",
     "svelte-check": "^4.6.0",
     "tsx": "^4.22.4",

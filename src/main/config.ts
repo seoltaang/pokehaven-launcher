@@ -15,6 +15,18 @@ export function runtimeDir(): string {
   return join(app.getPath('userData'), 'runtime');
 }
 
+/**
+ * The Node binary used to fork the install/launch worker. Electron's own Node
+ * hangs on it, so in a packaged app we fork the Node binary bundled under
+ * resources/node; in dev we use the Node that launched us.
+ */
+export function workerNodePath(): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, 'node', process.platform === 'win32' ? 'node.exe' : 'node');
+  }
+  return process.env['npm_node_execpath'] || 'node';
+}
+
 export const MINECRAFT_VERSION = '1.21.1';
 export const NEOFORGE_VERSION = '21.1.233';
 

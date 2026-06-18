@@ -16,7 +16,7 @@ import { getCurrentAccount, getGameAccount } from './auth.js';
 import { loadSettings } from './settings-store.js';
 import { loadState, saveState } from './launcher-state.js';
 import {
-  instanceDir, runtimeDir, MINECRAFT_VERSION, NEOFORGE_VERSION, MANIFEST_URL, SERVER,
+  instanceDir, runtimeDir, workerNodePath, MINECRAFT_VERSION, NEOFORGE_VERSION, MANIFEST_URL, SERVER,
 } from './config.js';
 
 export type ProgressSink = (p: Progress) => void;
@@ -29,9 +29,8 @@ export type StateSink = (state: LauncherStatus['state']) => void;
  */
 function forkWorker(): ReturnType<typeof fork> {
   const workerPath = join(import.meta.dirname, 'install-worker.js');
-  // npm sets npm_node_execpath to the system node that launched us (dev);
-  // fall back to PATH lookup.
-  const nodeExec = process.env['npm_node_execpath'] || 'node';
+  // Packaged: the Node bundled under resources/node. Dev: the Node that launched us.
+  const nodeExec = workerNodePath();
   return fork(workerPath, [], {
     execPath: nodeExec,
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
