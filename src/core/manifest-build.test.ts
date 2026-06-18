@@ -14,11 +14,17 @@ describe('classifyFile', () => {
     expect(classifyFile('config/xaero/minimap.txt')).toEqual({ managed: true, force: false });
     expect(classifyFile('config/jei/jei-client.ini')).toEqual({ managed: true, force: false });
   });
+  it('ships server list / options / resource packs as install-once seeds', () => {
+    expect(classifyFile('servers.dat')).toEqual({ managed: true, force: false });
+    expect(classifyFile('options.txt')).toEqual({ managed: true, force: false });
+    expect(classifyFile('resourcepacks/pack.zip')).toEqual({ managed: true, force: false });
+    expect(classifyFile('shaderpacks/shader.zip')).toEqual({ managed: true, force: false });
+  });
   it('does not manage personal/world data', () => {
     expect(classifyFile('saves/world/level.dat').managed).toBe(false);
-    expect(classifyFile('options.txt').managed).toBe(false);
     expect(classifyFile('screenshots/x.png').managed).toBe(false);
     expect(classifyFile('logs/latest.log').managed).toBe(false);
+    expect(classifyFile('servers.dat_old').managed).toBe(false);
   });
 });
 
