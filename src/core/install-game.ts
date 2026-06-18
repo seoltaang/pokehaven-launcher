@@ -1,7 +1,12 @@
 // src/core/install-game.ts
+import net from 'node:net';
 import { getVersionList, installTask, installNeoForgedTask } from '@xmcl/installer';
 import type { ResolvedVersion } from '@xmcl/core';
 import { ensureJava } from './java.js';
+
+// Disable Happy Eyeballs (autoSelectFamily). undici's connection setup can hang
+// under Electron's Node when this is on, which stalled the NeoForge install.
+net.setDefaultAutoSelectFamily?.(false);
 
 export type InstallPhase = 'vanilla' | 'java' | 'neoforge' | 'done';
 
@@ -31,6 +36,11 @@ export interface InstallGameResult {
 /**
  * Install vanilla Minecraft, ensure a matching Java, then install NeoForge.
  * Idempotent enough to re-run: @xmcl skips already-valid files.
+ *
+ * NOTE: the NeoForge install (installer unzip + Java processors) hangs when run
+ * on Electron's main process, so the launcher runs this inside a separate Node
+ * `utilityProcess` (see src/main/install-worker.ts). It runs fine in any normal
+ * Node process.
  */
 export async function installGame(options: InstallGameOptions): Promise<InstallGameResult> {
   const { instanceRoot, minecraft, neoforge, runtimeDir, onPhase, onProgress } = options;

@@ -5,6 +5,15 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        // Second entry: the install worker run as a utilityProcess.
+        input: {
+          index: resolve('src/main/index.ts'),
+          'install-worker': resolve('src/main/install-worker.ts'),
+        },
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

@@ -1,11 +1,13 @@
 // src/main/launcher-service.ts
+import { fork } from 'node:child_process';
+import { join } from 'node:path';
 import type { LauncherStatus, Progress } from '../shared/ipc.js';
 import { fetchManifest } from '../core/fetch-manifest.js';
 import { scanInstance } from '../core/scan-instance.js';
 import { computeSyncPlan, needsUpdate, MANAGED_DELETE_ROOTS } from '../core/sync.js';
 import { applySyncPlan } from '../core/apply-plan.js';
 import { downloadVerified } from '../core/downloader.js';
-import { installGame } from '../core/install-game.js';
+import type { InstallGameResult } from '../core/install-game.js';
 import { launchGame, createMinecraftProcessWatcher } from '../core/launch-game.js';
 import { deriveLaunchState } from '../core/launch-state.js';
 import type { Manifest } from '../core/types.js';
@@ -18,6 +20,53 @@ import {
 
 export type ProgressSink = (p: Progress) => void;
 export type StateSink = (state: LauncherStatus['state']) => void;
+
+/**
+ * Run installGame in a child process spawned with the SYSTEM node binary. The
+ * NeoForge install hangs under Electron's bundled Node (both main and
+ * utilityProcess), but completes in a normal Node process.
+ */
+function installViaWorker(onProgress: ProgressSink): Promise<InstallGameResult> {
+  return new Promise((resolve, reject) => {
+    const workerPath = join(import.meta.dirname, 'install-worker.js');
+    // npm sets npm_node_execpath to the system node that launched us (dev);
+    // fall back to PATH lookup.
+    const nodeExec = process.env['npm_node_execpath'] || 'node';
+    const child = fork(workerPath, [], {
+      execPath: nodeExec,
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    });
+    let settled = false;
+    const request = {
+      instanceRoot: instanceDir(),
+      minecraft: MINECRAFT_VERSION,
+      neoforge: NEOFORGE_VERSION,
+      runtimeDir: runtimeDir(),
+    };
+    child.on('message', (msg: { type: string; [k: string]: unknown }) => {
+      if (msg.type === 'ready') {
+        child.send(request);
+      } else if (msg.type === 'progress') {
+        onProgress({ fraction: msg['fraction'] as number, currentFile: msg['detail'] as string });
+      } else if (msg.type === 'done') {
+        settled = true;
+        resolve(msg['result'] as InstallGameResult);
+      } else if (msg.type === 'error') {
+        settled = true;
+        reject(new Error(String(msg['message'])));
+      }
+    });
+    child.on('error', (e) => {
+      if (!settled) {
+        settled = true;
+        reject(e);
+      }
+    });
+    child.on('exit', (code) => {
+      if (!settled) reject(new Error(`install worker exited unexpectedly (code ${code})`));
+    });
+  });
+}
 
 let etag: string | null = null;
 let cachedManifest: Manifest | null = null;
@@ -95,18 +144,13 @@ async function runPlayOrUpdate(onProgress: ProgressSink, onState: StateSink): Pr
       });
     }
 
-    // 2) ensure Java + vanilla + NeoForge installed (streams real download progress)
-    console.log('[launcher] installing game (java + vanilla + neoforge)…');
-    const { versionId } = await installGame({
-      instanceRoot: instanceDir(),
-      minecraft: MINECRAFT_VERSION,
-      neoforge: NEOFORGE_VERSION,
-      runtimeDir: runtimeDir(),
-      onProgress: (fraction, detail) => onProgress({ fraction, currentFile: detail }),
-    });
+    // 2) ensure Java + vanilla + NeoForge installed (in an off-main worker)
+    console.log('[launcher] installing game (java + vanilla + neoforge) via worker…');
+    const { versionId } = await installViaWorker(onProgress);
     console.log('[launcher] install complete; versionId =', versionId);
 
     await saveState({ gameVersionId: versionId, packVersion: manifest?.packVersion });
+    console.log('[launcher] install done -> emitting state PLAY');
     onState('play');
     return;
   }
@@ -133,9 +177,17 @@ async function runPlayOrUpdate(onProgress: ProgressSink, onState: StateSink): Pr
       account,
       server: settings.directConnect ? SERVER : undefined,
     });
+    console.log('[launcher] minecraft process spawned, pid =', proc.pid);
     const watcher = createMinecraftProcessWatcher(proc);
-    watcher.on('minecraft-exit', () => onState('play'));
-    watcher.on('error', () => onState('play'));
+    watcher.on('minecraft-window-ready', () => console.log('[launcher] minecraft window ready'));
+    watcher.on('minecraft-exit', (ev) => {
+      console.log('[launcher] minecraft exited, code =', ev.code);
+      onState('play');
+    });
+    watcher.on('error', (err) => {
+      console.error('[launcher] minecraft process error:', err);
+      onState('play');
+    });
   }
 }
 
