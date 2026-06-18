@@ -1,6 +1,6 @@
 // src/core/install-game.ts
 import net from 'node:net';
-import { Agent, RetryAgent, type Dispatcher } from 'undici';
+import { Agent, interceptors, type Dispatcher } from 'undici';
 import { getVersionList, installTask, installNeoForgedTask } from '@xmcl/installer';
 import type { ResolvedVersion } from '@xmcl/core';
 import { ensureJava } from './java.js';
@@ -10,11 +10,16 @@ import { ensureJava } from './java.js';
 net.setDefaultAutoSelectFamily?.(false);
 
 // Connections to Mojang's asset CDN / maven are flaky from some networks
-// (UND_ERR_CONNECT_TIMEOUT). Use a long connect timeout and retry transient
-// failures so the bulk asset/library download completes instead of aborting.
-const robustDispatcher: Dispatcher = new RetryAgent(
-  new Agent({ connect: { timeout: 60_000 }, connections: 32, headersTimeout: 60_000, bodyTimeout: 300_000 }),
-  {
+// (UND_ERR_CONNECT_TIMEOUT). Use a long connect timeout, retry transient failures,
+// and follow redirects (mirrors + some maven hosts 302) so the bulk asset/library
+// download completes instead of aborting on the first batch of timeouts.
+const robustDispatcher: Dispatcher = new Agent({
+  connect: { timeout: 60_000 },
+  connections: 32,
+  headersTimeout: 60_000,
+  bodyTimeout: 300_000,
+}).compose(
+  interceptors.retry({
     maxRetries: 8,
     minTimeout: 500,
     maxTimeout: 10_000,
@@ -22,7 +27,8 @@ const robustDispatcher: Dispatcher = new RetryAgent(
       'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT', 'UND_ERR_SOCKET',
       'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ENETDOWN', 'ENETUNREACH', 'EHOSTDOWN', 'EHOSTUNREACH', 'EPIPE', 'ETIMEDOUT',
     ],
-  },
+  }),
+  interceptors.redirect({ maxRedirections: 5 }),
 );
 
 export type InstallPhase = 'vanilla' | 'java' | 'neoforge' | 'done';
@@ -61,8 +67,9 @@ export interface InstallGameResult {
  */
 export async function installGame(options: InstallGameOptions): Promise<InstallGameResult> {
   const { instanceRoot, minecraft, neoforge, runtimeDir, onPhase, onProgress } = options;
-  // Modest concurrency + retry dispatcher = far fewer connect timeouts on flaky links.
-  const concurrency = options.downloadConcurrency ?? 4;
+  // Low concurrency + retry dispatcher = far fewer connect timeouts on flaky links
+  // (e.g. Korea↔Mojang). @xmcl resumes, so re-running INSTALL fills in any gaps.
+  const concurrency = options.downloadConcurrency ?? 2;
 
   // Progress is split across phases: vanilla 0..0.6, java 0.6..0.75, neoforge 0.75..1.
   onPhase?.('vanilla');
