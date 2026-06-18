@@ -59,6 +59,9 @@ async function main() {
   for (const path of managed) {
     const abs = join(profile, path);
     const { size } = await stat(abs);
+    // Skip 0-byte files: they carry no content and GitHub release assets reject
+    // empty uploads ("Bad Content-Length"). The mod recreates such markers itself.
+    if (size === 0) continue;
     const sha1 = await sha1OfFile(abs);
     const { force } = classifyFile(path);
     files.push({ path, sha1, size, url: assetUrl(baseUrl, sha1), force });

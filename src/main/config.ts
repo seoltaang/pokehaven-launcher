@@ -19,10 +19,11 @@ export const MINECRAFT_VERSION = '1.21.1';
 export const NEOFORGE_VERSION = '21.1.233';
 
 /**
- * Remote modpack manifest URL. Leave empty until the GitHub manifest is published —
- * while empty, mod sync is skipped (install + launch still work).
+ * Remote modpack manifest URL (GitHub release asset). When set, the launcher
+ * syncs mods/config from here; leave empty to skip sync (install + launch only).
  */
-export const MANIFEST_URL = '';
+export const MANIFEST_URL =
+  'https://github.com/seoltaang/pokehaven-modpack/releases/download/modpack/manifest.json';
 
 /** PokeHaven Frontier server for direct-connect. */
 export const SERVER = { ip: 'ysknd.kro.kr', port: 25565 };
