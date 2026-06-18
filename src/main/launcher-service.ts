@@ -8,7 +8,7 @@ import { computeSyncPlan, needsUpdate, MANAGED_DELETE_ROOTS } from '../core/sync
 import { applySyncPlan } from '../core/apply-plan.js';
 import { downloadVerified } from '../core/downloader.js';
 import type { InstallGameResult } from '../core/install-game.js';
-import { launchGame, createMinecraftProcessWatcher } from '../core/launch-game.js';
+import type { GameAccount } from '../core/launch-game.js';
 import { deriveLaunchState } from '../core/launch-state.js';
 import type { Manifest } from '../core/types.js';
 import { getCurrentAccount, getGameAccount } from './auth.js';
@@ -22,30 +22,34 @@ export type ProgressSink = (p: Progress) => void;
 export type StateSink = (state: LauncherStatus['state']) => void;
 
 /**
- * Run installGame in a child process spawned with the SYSTEM node binary. The
- * NeoForge install hangs under Electron's bundled Node (both main and
- * utilityProcess), but completes in a normal Node process.
+ * Fork the task worker with the SYSTEM node binary. Both the NeoForge install
+ * AND the game launch (natives extraction) hang under Electron's bundled Node
+ * (main and utilityProcess alike), but complete in a normal Node process.
  */
+function forkWorker(): ReturnType<typeof fork> {
+  const workerPath = join(import.meta.dirname, 'install-worker.js');
+  // npm sets npm_node_execpath to the system node that launched us (dev);
+  // fall back to PATH lookup.
+  const nodeExec = process.env['npm_node_execpath'] || 'node';
+  return fork(workerPath, [], {
+    execPath: nodeExec,
+    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+  });
+}
+
 function installViaWorker(onProgress: ProgressSink): Promise<InstallGameResult> {
   return new Promise((resolve, reject) => {
-    const workerPath = join(import.meta.dirname, 'install-worker.js');
-    // npm sets npm_node_execpath to the system node that launched us (dev);
-    // fall back to PATH lookup.
-    const nodeExec = process.env['npm_node_execpath'] || 'node';
-    const child = fork(workerPath, [], {
-      execPath: nodeExec,
-      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-    });
+    const child = forkWorker();
     let settled = false;
-    const request = {
-      instanceRoot: instanceDir(),
-      minecraft: MINECRAFT_VERSION,
-      neoforge: NEOFORGE_VERSION,
-      runtimeDir: runtimeDir(),
-    };
     child.on('message', (msg: { type: string; [k: string]: unknown }) => {
       if (msg.type === 'ready') {
-        child.send(request);
+        child.send({
+          command: 'install',
+          instanceRoot: instanceDir(),
+          minecraft: MINECRAFT_VERSION,
+          neoforge: NEOFORGE_VERSION,
+          runtimeDir: runtimeDir(),
+        });
       } else if (msg.type === 'progress') {
         onProgress({ fraction: msg['fraction'] as number, currentFile: msg['detail'] as string });
       } else if (msg.type === 'done') {
@@ -64,6 +68,52 @@ function installViaWorker(onProgress: ProgressSink): Promise<InstallGameResult> 
     });
     child.on('exit', (code) => {
       if (!settled) reject(new Error(`install worker exited unexpectedly (code ${code})`));
+    });
+  });
+}
+
+/**
+ * Launch the game in the worker. Resolves once the game process has spawned; the
+ * worker keeps watching it and calls onState('play') when the game exits.
+ */
+function launchViaWorker(
+  params: { versionId: string; maxMemoryMB: number; account: GameAccount; server?: { ip: string; port?: number } },
+  onState: StateSink,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = forkWorker();
+    let spawned = false;
+    child.on('message', (msg: { type: string; [k: string]: unknown }) => {
+      if (msg.type === 'ready') {
+        child.send({
+          command: 'launch',
+          instanceRoot: instanceDir(),
+          runtimeDir: runtimeDir(),
+          versionId: params.versionId,
+          maxMemoryMB: params.maxMemoryMB,
+          account: params.account,
+          server: params.server,
+        });
+      } else if (msg.type === 'launch-spawned') {
+        spawned = true;
+        console.log('[launcher] minecraft spawned (pid', msg['pid'], ')');
+        resolve();
+      } else if (msg.type === 'launch-window') {
+        console.log('[launcher] minecraft window ready');
+      } else if (msg.type === 'launch-exit') {
+        console.log('[launcher] minecraft exited, code =', msg['code']);
+        onState('play');
+      } else if (msg.type === 'launch-error') {
+        console.error('[launcher] launch error:', msg['message']);
+        if (!spawned) reject(new Error(String(msg['message'])));
+        else onState('play');
+      }
+    });
+    child.on('error', (e) => {
+      if (!spawned) reject(e);
+    });
+    child.on('exit', (code) => {
+      if (!spawned) reject(new Error(`launch worker exited before spawn (code ${code})`));
     });
   });
 }
@@ -168,35 +218,16 @@ async function runPlayOrUpdate(onProgress: ProgressSink, onState: StateSink): Pr
     }
     const settings = await loadSettings();
     onState('launching');
-    console.log('[launcher] launching minecraft (version', state.gameVersionId, ', ram', settings.ramMB, 'MB)…');
-    const proc = await launchGame({
-      instanceRoot: instanceDir(),
-      versionId: state.gameVersionId,
-      javaPath: await resolveJavaPath(),
-      maxMemoryMB: settings.ramMB,
-      account,
-      server: settings.directConnect ? SERVER : undefined,
-    });
-    console.log('[launcher] minecraft process spawned, pid =', proc.pid);
-    const watcher = createMinecraftProcessWatcher(proc);
-    watcher.on('minecraft-window-ready', () => console.log('[launcher] minecraft window ready'));
-    watcher.on('minecraft-exit', (ev) => {
-      console.log('[launcher] minecraft exited, code =', ev.code);
-      onState('play');
-    });
-    watcher.on('error', (err) => {
-      console.error('[launcher] minecraft process error:', err);
-      onState('play');
-    });
+    console.log('[launcher] launching minecraft via worker (version', state.gameVersionId, ', ram', settings.ramMB, 'MB)…');
+    // Launch in the worker (off Electron's Node); resolves once the game spawns.
+    await launchViaWorker(
+      {
+        versionId: state.gameVersionId,
+        maxMemoryMB: settings.ramMB,
+        account,
+        server: settings.directConnect ? SERVER : undefined,
+      },
+      onState,
+    );
   }
-}
-
-/** Re-resolve the Java path the same way install did (reuse local or the downloaded runtime). */
-async function resolveJavaPath(): Promise<string> {
-  // installGame already ensured Java; re-running ensureJava resolves the cached/downloaded one fast.
-  const { ensureJava } = await import('../core/java.js');
-  const { Version } = await import('@xmcl/core');
-  const state = await loadState();
-  const resolved = await Version.parse(instanceDir(), state.gameVersionId!);
-  return ensureJava(resolved.javaVersion.component, resolved.javaVersion.majorVersion, runtimeDir());
 }
