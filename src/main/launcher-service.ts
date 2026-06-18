@@ -1,5 +1,6 @@
 // src/main/launcher-service.ts
 import { fork, type ForkOptions } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { LauncherStatus, Progress } from '../shared/ipc.js';
 import { fetchManifest } from '../core/fetch-manifest.js';
@@ -145,12 +146,19 @@ async function computeSyncNeeded(manifest: Manifest | null): Promise<boolean> {
   return needsUpdate(computeSyncPlan(manifest, local));
 }
 
+/** True only if a recorded game version is also actually present on disk. */
+function gameActuallyInstalled(versionId: string | undefined): boolean {
+  if (!versionId) return false;
+  return existsSync(join(instanceDir(), 'versions', versionId, `${versionId}.json`));
+}
+
 /** Build the current status for the UI. */
 export async function getStatus(): Promise<LauncherStatus> {
   const account = getCurrentAccount();
   const state0 = await loadState();
   const manifest = await fetchPackManifest();
-  const installed = Boolean(state0.gameVersionId);
+  // Verify the game files still exist — the instance dir may have been deleted.
+  const installed = gameActuallyInstalled(state0.gameVersionId);
   const syncNeeded = await computeSyncNeeded(manifest);
   return {
     state: deriveLaunchState({ loggedIn: account.loggedIn, installed, syncNeeded }),
