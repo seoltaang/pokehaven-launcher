@@ -6,7 +6,7 @@ import { SERVER, SERVER_MAX_PLAYERS } from './config.js';
 /** Query the PokeHaven Frontier server via the Minecraft Server List Ping. */
 export async function getServerStatus(): Promise<ServerStatus> {
   try {
-    const res = await status(SERVER.ip, SERVER.port, { timeout: 5000 });
+    const res = await status(SERVER.ip, SERVER.port, { timeout: 5000, enableSRV: true });
     return {
       online: true,
       players: res.players.online,
