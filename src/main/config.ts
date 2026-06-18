@@ -24,5 +24,8 @@ export const NEOFORGE_VERSION = '21.1.233';
  */
 export const MANIFEST_URL = '';
 
-/** PokeHaven Frontier server for direct-connect. Replace host with the real address. */
+/** PokeHaven Frontier server for direct-connect + live status. Replace host with the real address. */
 export const SERVER = { ip: 'play.pokehaven.example', port: 25565 };
+
+/** Fallback max-player count shown when the server can't be reached. */
+export const SERVER_MAX_PLAYERS = 220;

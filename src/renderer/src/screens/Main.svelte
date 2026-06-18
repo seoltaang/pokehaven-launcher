@@ -4,7 +4,7 @@
   import Pokeball from '../components/Pokeball.svelte';
   import { playButtonState } from '../lib/playButton.js';
   import { formatProgress } from '../lib/format.js';
-  import type { LauncherStatus, Account } from '../../../shared/ipc.js';
+  import type { LauncherStatus, Account, ServerStatus } from '../../../shared/ipc.js';
 
   interface Props {
     status: LauncherStatus;
@@ -13,6 +13,21 @@
     onplay: () => void;
   }
   let { status, account, progress = null, onplay }: Props = $props();
+
+  // Live server status (Minecraft server ping), refreshed periodically.
+  let server = $state<ServerStatus>({ online: false, players: 0, maxPlayers: 220 });
+  async function refreshServer() {
+    try {
+      server = await window.launcher.getServerStatus();
+    } catch {
+      server = { online: false, players: 0, maxPlayers: server.maxPlayers };
+    }
+  }
+  $effect(() => {
+    refreshServer();
+    const id = setInterval(refreshServer, 30_000);
+    return () => clearInterval(id);
+  });
 
   let btn = $derived(playButtonState(status.state));
   let busy = $derived(status.state === 'updating' || status.state === 'launching');
@@ -25,8 +40,6 @@
     : status.state === 'logged-out' ? '로그인이 필요합니다'
     : '플레이 준비 완료',
   );
-
-  const server = { players: 142, maxPlayers: 200, region: 'ASIA' };
 </script>
 
 <div class="stage">
@@ -43,11 +56,11 @@
     <p>Pixelmon · NeoForge 1.21.1</p>
   </div>
 
-  <!-- server info (glass) -->
+  <!-- server info (glass) — live via Minecraft server ping -->
   <div class="srv">
-    <div class="srv-top"><span class="live"></span>SERVER ONLINE</div>
+    <div class="srv-top"><span class="live" class:off={!server.online}></span>{server.online ? 'SERVER ONLINE' : 'SERVER OFFLINE'}</div>
     <div class="srv-big">{server.players}<span>/{server.maxPlayers}</span></div>
-    <div class="srv-sub">트레이너 접속 중 · {server.region}</div>
+    <div class="srv-sub">{server.online ? '트레이너 접속 중' : '서버에 연결할 수 없음'}</div>
   </div>
 
   <!-- bottom action bar -->
@@ -92,6 +105,7 @@
   }
   .srv-top { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; opacity: 0.95; }
   .live { width: 8px; height: 8px; border-radius: 50%; background: #66e08a; box-shadow: 0 0 0 4px rgba(102,224,138,0.3); }
+  .live.off { background: #d9534f; box-shadow: 0 0 0 4px rgba(217,83,79,0.25); }
   .srv-big { font-size: 34px; font-weight: 900; margin-top: 6px; }
   .srv-big span { font-size: 16px; opacity: 0.8; font-weight: 700; }
   .srv-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }

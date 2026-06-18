@@ -36,6 +36,29 @@
   --mono: "Consolas", "SFMono-Regular", "Menlo", monospace;
 }
 
+/* Dark theme — toggled by adding `.dark` to <html>. Brand/type colors stay. */
+:root.dark {
+  --bg: #0e141b;
+  --bg-soft: #18222d;
+  --panel: #1a242f;
+  --panel-2: #212d3a;
+  --ink: #e8eff6;
+  --ink-dim: #93a7ba;
+  --line: #2b3a49;
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+:root.dark body {
+  background:
+    radial-gradient(1100px 480px at 88% -8%, rgba(42, 117, 187, 0.18), transparent 60%),
+    radial-gradient(900px 420px at -6% 4%, rgba(238, 21, 21, 0.12), transparent 55%),
+    var(--bg);
+}
+
+:root.dark ::-webkit-scrollbar-thumb { background: #33485c; border-color: var(--bg); }
+
 * { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }
 

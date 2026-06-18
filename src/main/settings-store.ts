@@ -13,7 +13,7 @@ function file(): string {
 }
 
 function defaults(): Settings {
-  return { ramMB: 6144, directConnect: true, instanceDir: instanceDir() };
+  return { ramMB: 6144, directConnect: true, instanceDir: instanceDir(), theme: 'light' };
 }
 
 export async function loadSettings(): Promise<Settings> {

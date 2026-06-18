@@ -27,6 +27,14 @@ export interface Settings {
   ramMB: number;
   directConnect: boolean;
   instanceDir: string;
+  theme: 'light' | 'dark';
+}
+
+/** Live status of the PokeHaven Frontier server (via Minecraft server ping). */
+export interface ServerStatus {
+  online: boolean;
+  players: number;
+  maxPlayers: number;
 }
 
 /** Progress for the updating/launching phases (0..1). */
@@ -44,6 +52,10 @@ export interface LauncherApi {
   logout(): Promise<void>;
   playOrUpdate(): Promise<void>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
+  /** Open the instance folder in the OS file manager. */
+  openInstanceDir(): void;
+  /** Query the live server status (online players / max). */
+  getServerStatus(): Promise<ServerStatus>;
   minimize(): void;
   close(): void;
   /** Subscribe to install/update progress. Returns an unsubscribe function. */

@@ -23,6 +23,11 @@
   window.launcher.onProgress((p) => { progress = p; });
   window.launcher.onError((m) => { bootError = m; });
 
+  // Apply the persisted theme (toggling `.dark` on <html>).
+  $effect(() => {
+    document.documentElement.classList.toggle('dark', settings?.theme === 'dark');
+  });
+
   async function refresh() {
     try {
       account = await window.launcher.getAccount();
