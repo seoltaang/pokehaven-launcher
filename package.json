@@ -1,12 +1,13 @@
 {
   "name": "pokehaven-launcher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "main": "./out/main/index.js",
   "description": "PokeHaven Frontier modpack launcher",
   "author": "PokeHaven",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "node scripts/run-electron-vite.mjs dev",
     "build": "electron-vite build",
     "start": "node scripts/run-electron-vite.mjs preview",
@@ -27,6 +28,7 @@
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "patch-package": "^8.0.1",
     "png2icons": "^2.0.1",
     "svelte": "^5.56.3",
     "svelte-check": "^4.6.0",

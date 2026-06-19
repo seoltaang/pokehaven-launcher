@@ -1,0 +1,17 @@
+diff --git a/node_modules/undici/lib/core/request.js b/node_modules/undici/lib/core/request.js
+index a8680b5..2792a28 100644
+--- a/node_modules/undici/lib/core/request.js
++++ b/node_modules/undici/lib/core/request.js
+@@ -82,8 +82,11 @@ class Request {
+       throw new InvalidArgumentError('invalid expectContinue')
+     }
+ 
++    // PATCHED: throwOnError was removed as a request option in undici 7, but
++    // @xmcl/installer still passes it (Java/version-manifest fetches). Accept and
++    // ignore it instead of throwing 'invalid throwOnError'.
+     if (throwOnError != null) {
+-      throw new InvalidArgumentError('invalid throwOnError')
++      // no-op
+     }
+ 
+     this.headersTimeout = headersTimeout
