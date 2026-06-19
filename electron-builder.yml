@@ -1,5 +1,7 @@
 appId: kr.pokehaven.launcher
 productName: PokeHaven Frontier
+# ad-hoc sign the mac app so Apple Silicon will run it (unsigned = "damaged").
+afterPack: scripts/afterPack.cjs
 # asar must be off: the install/launch worker is forked with a real Node binary
 # (Electron's own Node hangs on it), and a forked Node can't read files from an
 # asar archive. Plain files on disk keep the worker + its deps readable.
